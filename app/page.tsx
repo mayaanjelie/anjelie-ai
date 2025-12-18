@@ -109,22 +109,74 @@ export default function SustainableFashionAI() {
     ctx.fillText('♻️ Eco-Friendly Design', 20, 30)
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!input.trim() || isLoading) return
 
     const userMessage = input.trim()
     setInput('')
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }])
+    const newMessages = [...messages, { role: 'user', content: userMessage }]
+    setMessages(newMessages)
     setIsLoading(true)
 
-    setTimeout(() => {
-      const aiResponse = generateSustainableResponse(userMessage)
-      setMessages(prev => [...prev, { role: 'assistant', content: aiResponse.message }])
-      if (aiResponse.design) {
-        setCurrentDesign(aiResponse.design)
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: newMessages }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to get response')
       }
+
+      const data = await response.json()
+      setMessages(prev => [...prev, { role: 'assistant', content: data.message }])
+
+      // Detect and create design based on AI response
+      const design = detectDesignFromResponse(userMessage, data.message)
+      if (design) {
+        setCurrentDesign(design)
+      }
+    } catch (error) {
+      console.error('Error:', error)
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: 'Sorry, I encountered an error. Please make sure the API key is configured correctly.'
+      }])
+    } finally {
       setIsLoading(false)
-    }, 1500)
+    }
+  }
+
+  const detectDesignFromResponse = (prompt: string, response: string) => {
+    const lowerPrompt = prompt.toLowerCase()
+    const lowerResponse = response.toLowerCase()
+
+    // Only create design if the response is actually describing a design
+    if (!lowerResponse.includes('design') && !lowerResponse.includes('fabric')) {
+      return null
+    }
+
+    if (lowerPrompt.includes('dress') || lowerPrompt.includes('maxi') || lowerPrompt.includes('gown')) {
+      return {
+        type: 'dress',
+        color: lowerPrompt.includes('green') ? '#10b981' :
+               lowerPrompt.includes('blue') ? '#3b82f6' :
+               lowerPrompt.includes('earth') || lowerPrompt.includes('natural') ? '#92400e' : '#8b5cf6',
+        pattern: lowerPrompt.includes('botanical') || lowerPrompt.includes('floral') ? 'botanical' : 'solid',
+        sleeves: lowerPrompt.includes('flowing') || lowerPrompt.includes('sleeve') ? 'flowing' : 'sleeveless',
+        sustainable: true
+      }
+    } else if (lowerPrompt.includes('top') || lowerPrompt.includes('blouse') || lowerPrompt.includes('shirt')) {
+      return {
+        type: 'top',
+        color: lowerPrompt.includes('white') || lowerPrompt.includes('natural') ? '#f3f4f6' :
+               lowerPrompt.includes('black') ? '#1f2937' : '#fbbf24',
+        sustainable: true
+      }
+    }
+
+    return null
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -134,43 +186,6 @@ export default function SustainableFashionAI() {
     }
   }
 
-  const generateSustainableResponse = (prompt: string) => {
-    const lowerPrompt = prompt.toLowerCase()
-    
-    let design = null
-    let message = ''
-
-    if (lowerPrompt.includes('dress') || lowerPrompt.includes('maxi') || lowerPrompt.includes('gown')) {
-      const isEcoFriendly = lowerPrompt.includes('eco') || lowerPrompt.includes('sustainable') || lowerPrompt.includes('organic')
-      
-      design = {
-        type: 'dress',
-        color: lowerPrompt.includes('green') ? '#10b981' : 
-               lowerPrompt.includes('blue') ? '#3b82f6' : 
-               lowerPrompt.includes('earth') || lowerPrompt.includes('natural') ? '#92400e' : '#8b5cf6',
-        pattern: lowerPrompt.includes('botanical') || lowerPrompt.includes('floral') ? 'botanical' : 'solid',
-        sleeves: lowerPrompt.includes('flowing') || lowerPrompt.includes('sleeve') ? 'flowing' : 'sleeveless',
-        sustainable: isEcoFriendly
-      }
-      
-      message = `✨ Beautiful sustainable design created!\n\n**Design Specifications:**\n• Style: Flowing ${lowerPrompt.includes('maxi') ? 'maxi' : ''} dress\n• Aesthetic: ${design.pattern === 'botanical' ? 'Botanical print' : 'Minimalist solid'}\n\n🌱 **SUSTAINABILITY ANALYSIS:**\n\n**Recommended Fabric:** Organic Cotton (GOTS Certified)\n• Carbon footprint: 46% lower than conventional cotton\n• Water usage: 91% less water required\n• No toxic pesticides\n\n**Alternative Options:**\n1. Tencel™ Lyocell - Eucalyptus-based, biodegradable\n2. Recycled Polyester - Made from ocean plastics\n3. Hemp Blend - Carbon negative, requires no irrigation\n\n💧 **Impact Metrics:**\n• Water saved: ~2,700 liters vs conventional\n• CO2 reduced: ~5.5 kg per garment\n• Microplastic prevention: 100%\n\n**Suggested Dyes:** Natural indigo or plant-based dyes\n**Production:** Fair Trade certified factories in Portugal\n\nWould you like me to suggest sustainable button/zipper options or adjust the design?`
-      
-    } else if (lowerPrompt.includes('top') || lowerPrompt.includes('blouse') || lowerPrompt.includes('shirt')) {
-      design = {
-        type: 'top',
-        color: lowerPrompt.includes('white') || lowerPrompt.includes('natural') ? '#f3f4f6' : 
-               lowerPrompt.includes('black') ? '#1f2937' : '#fbbf24',
-        sustainable: true
-      }
-      
-      message = `✨ Sustainable top design ready!\n\n**Design Details:**\n• Style: Modern fitted top\n• Color: ${design.color === '#f3f4f6' ? 'Natural white' : design.color === '#1f2937' ? 'Deep black' : 'Warm earth tone'}\n\n🌱 **SUSTAINABILITY RECOMMENDATIONS:**\n\n**Recommended Fabric:** Organic Linen\n• Naturally pest-resistant (no pesticides needed)\n• Fully biodegradable\n• Carbon negative crop\n• Durable - lasts 2-3x longer than cotton\n\n**Sustainable Alternatives:**\n1. Peace Silk - No harm to silkworms\n2. Piñatex - Made from pineapple leaves\n3. Modal - Beechwood fiber, closed-loop production\n\n💚 **Environmental Impact:**\n• 50% less energy than polyester production\n• Zero microplastic shedding\n• Compostable at end of life\n\n**Trim Suggestions:**\n• Coconut shell buttons (plastic-free)\n• Organic cotton thread\n• Natural rubber elastic\n\n**Manufacturing:** Recommend solar-powered facility in India with Fair Trade certification\n\nReady to generate tech pack with supplier connections?`
-      
-    } else {
-      message = `I'd love to help you create a sustainable design! Tell me:\n\n• What type of garment? (dress, top, pants, jacket)\n• Preferred style? (casual, formal, bohemian, minimalist)\n• Any specific eco-concerns? (vegan materials, zero waste, recycled, organic)\n• Color palette preferences?\n\nI'll recommend the most sustainable fabrics, dyes, and manufacturing options while creating a beautiful design that aligns with your values! 🌱`
-    }
-
-    return { message, design }
-  }
 
   const exportToShopify = () => {
     if (!currentDesign) return
