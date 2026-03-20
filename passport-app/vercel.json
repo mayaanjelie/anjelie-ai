@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "buildCommand": "npm run build",
+  "outputDirectory": "build/client",
+  "installCommand": "npm install",
+  "framework": null,
+  "functions": {
+    "build/server/index.js": {
+      "runtime": "nodejs18.x",
+      "maxDuration": 30
+    }
+  },
+  "routes": [
+    {
+      "src": "/build/(.+)",
+      "headers": { "cache-control": "public, immutable, max-age=31536000" },
+      "dest": "/build/$1"
+    },
+    { "src": "/(.*)", "dest": "/build/server/index.js" }
+  ]
+}

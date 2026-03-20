@@ -1,0 +1,6 @@
+[web]
+hmr_server = { http_server_port = 3001 }
+
+[web.commands]
+dev = "npm run dev"
+build = "npm run build"

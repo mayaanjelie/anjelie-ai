@@ -1,0 +1,25 @@
+api_version = "2024-10"
+
+[[extensions]]
+type = "theme"
+name = "PassPort QR Widget"
+handle = "passport-qr-widget"
+
+  [extensions.settings]
+    [[extensions.settings.fields]]
+      key = "widget_heading"
+      type = "single_line_text_field"
+      name = "Widget heading"
+      label = "Widget heading text"
+
+    [[extensions.settings.fields]]
+      key = "widget_bg_color"
+      type = "color"
+      name = "Widget background color"
+      label = "Background color"
+
+    [[extensions.settings.fields]]
+      key = "widget_text_color"
+      type = "color"
+      name = "Widget text color"
+      label = "Text color"

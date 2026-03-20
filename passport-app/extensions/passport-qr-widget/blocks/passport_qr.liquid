@@ -1,0 +1,149 @@
+{% comment %}
+  PassPort QR Widget — Theme App Extension Block
+  Displays the EU Digital Product Passport QR code on product pages.
+  The QR code image is pre-generated and served via your PassPort app.
+{% endcomment %}
+
+{% assign passport_api_url = shop.metafields.passport.api_url | default: "" %}
+{% assign heading = block.settings.widget_heading | default: "Scan for Product Passport" %}
+{% assign bg_color = block.settings.widget_bg_color | default: "#f0fdf4" %}
+{% assign text_color = block.settings.widget_text_color | default: "#15803d" %}
+
+<div
+  class="passport-qr-widget"
+  data-product-id="{{ product.id }}"
+  style="
+    background-color: {{ bg_color }};
+    border: 1px solid #bbf7d0;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    max-width: 280px;
+    margin: 16px auto;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  "
+>
+  <div class="passport-qr-loading" style="color: {{ text_color }}; padding: 20px;">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: passport-spin 1s linear infinite; display: inline-block;">
+      <path d="M21 12a9 9 0 11-6.219-8.56"/>
+    </svg>
+  </div>
+
+  <div class="passport-qr-content" style="display: none;">
+    <img
+      class="passport-qr-image"
+      src=""
+      alt="Product Passport QR Code"
+      width="160"
+      height="160"
+      style="border-radius: 8px; display: block; margin: 0 auto 12px;"
+    />
+    <p style="
+      margin: 0 0 6px;
+      font-size: 14px;
+      font-weight: 600;
+      color: {{ text_color }};
+    ">{{ heading }}</p>
+    <a
+      class="passport-qr-link"
+      href="#"
+      target="_blank"
+      rel="noopener noreferrer"
+      style="
+        font-size: 12px;
+        color: {{ text_color }};
+        opacity: 0.7;
+        text-decoration: none;
+      "
+    >View full passport →</a>
+  </div>
+
+  <div class="passport-qr-error" style="display: none; color: #9ca3af; font-size: 13px; padding: 12px;">
+    No passport available for this product yet.
+  </div>
+
+  <div style="margin-top: 12px; border-top: 1px solid #bbf7d0; padding-top: 10px;">
+    <span style="font-size: 11px; color: {{ text_color }}; opacity: 0.6;">
+      Powered by PassPort
+    </span>
+  </div>
+</div>
+
+<style>
+  @keyframes passport-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+</style>
+
+<script>
+  (function() {
+    var widget = document.querySelector('.passport-qr-widget[data-product-id="{{ product.id }}"]');
+    if (!widget) return;
+
+    var appUrl = "{{ shop.metafields.passport.app_url | default: '' }}";
+    if (!appUrl) {
+      // Fallback: try to find from meta tag injected by the app
+      var meta = document.querySelector('meta[name="passport-app-url"]');
+      if (meta) appUrl = meta.getAttribute('content');
+    }
+
+    if (!appUrl) {
+      widget.querySelector('.passport-qr-loading').style.display = 'none';
+      widget.querySelector('.passport-qr-error').style.display = 'block';
+      return;
+    }
+
+    var apiEndpoint = appUrl + '/api/storefront/passport?shopify_product_id=gid://shopify/Product/{{ product.id }}';
+
+    fetch(apiEndpoint, { method: 'GET', headers: { 'Accept': 'application/json' } })
+      .then(function(r) { return r.ok ? r.json() : null; })
+      .then(function(data) {
+        widget.querySelector('.passport-qr-loading').style.display = 'none';
+        if (data && data.qr_code_base64 && data.passport_url) {
+          widget.querySelector('.passport-qr-image').src = data.qr_code_base64;
+          widget.querySelector('.passport-qr-link').href = data.passport_url;
+          widget.querySelector('.passport-qr-content').style.display = 'block';
+        } else {
+          widget.querySelector('.passport-qr-error').style.display = 'block';
+        }
+      })
+      .catch(function() {
+        widget.querySelector('.passport-qr-loading').style.display = 'none';
+        widget.querySelector('.passport-qr-error').style.display = 'block';
+      });
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "PassPort QR Widget",
+  "target": "section",
+  "javascript": "passport_qr.js",
+  "settings": [
+    {
+      "type": "text",
+      "id": "widget_heading",
+      "label": "Widget heading",
+      "default": "Scan for Product Passport"
+    },
+    {
+      "type": "color",
+      "id": "widget_bg_color",
+      "label": "Background color",
+      "default": "#f0fdf4"
+    },
+    {
+      "type": "color",
+      "id": "widget_text_color",
+      "label": "Text color",
+      "default": "#15803d"
+    }
+  ],
+  "presets": [
+    {
+      "name": "PassPort QR Widget"
+    }
+  ]
+}
+{% endschema %}
