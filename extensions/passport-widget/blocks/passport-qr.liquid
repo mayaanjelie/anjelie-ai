@@ -1,0 +1,161 @@
+{% comment %}
+  PassPort QR Code Widget
+  Displays a QR code linking to the product's EU Digital Product Passport
+  Injected into product pages via Shopify Theme App Extension
+{% endcomment %}
+
+{% assign passport_api_url = shop.metafields.passport_app.api_url %}
+{% assign product_passport_slug = product.metafields.passport_app.passport_slug %}
+
+{% if product_passport_slug != blank %}
+  <div
+    class="passport-widget"
+    style="
+      display: flex;
+      flex-direction: column;
+      align-items: {{ block.settings.alignment }};
+      padding: {{ block.settings.padding }}px;
+      background: {{ block.settings.background_color }};
+      border-radius: 12px;
+      border: 1px solid rgba(0,0,0,0.08);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      max-width: 220px;
+    "
+    {{ block.shopify_attributes }}
+  >
+    <p style="
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: {{ block.settings.accent_color }};
+      margin: 0 0 10px;
+    ">
+      {{ block.settings.label_text }}
+    </p>
+
+    <div
+      id="passport-qr-{{ product.id }}"
+      style="
+        width: {{ block.settings.qr_size }}px;
+        height: {{ block.settings.qr_size }}px;
+        background: #fff;
+        border-radius: 8px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      "
+    >
+      <!-- QR code rendered by JS below -->
+    </div>
+
+    <p style="font-size: 12px; color: #64748b; margin: 8px 0 0; text-align: center; line-height: 1.4;">
+      {{ block.settings.sub_label }}
+    </p>
+
+    <a
+      href="{{ shop.metafields.passport_app.host_url }}/passport/{{ product_passport_slug }}"
+      target="_blank"
+      style="
+        display: inline-block;
+        margin-top: 8px;
+        font-size: 11px;
+        color: {{ block.settings.accent_color }};
+        text-decoration: none;
+        font-weight: 600;
+      "
+    >
+      View full passport →
+    </a>
+  </div>
+
+  <script>
+    (function() {
+      var slug = "{{ product_passport_slug }}";
+      var hostUrl = "{{ shop.metafields.passport_app.host_url }}";
+      var passportUrl = hostUrl + "/passport/" + slug;
+      var size = {{ block.settings.qr_size }};
+      var container = document.getElementById("passport-qr-{{ product.id }}");
+
+      if (!container || !slug) return;
+
+      // Load QRCode.js dynamically
+      var script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js';
+      script.onload = function() {
+        QRCode.toCanvas(container, passportUrl, {
+          width: size,
+          margin: 1,
+          color: {
+            dark: '#0f172a',
+            light: '#ffffff'
+          }
+        });
+      };
+      document.head.appendChild(script);
+    })();
+  </script>
+{% endif %}
+
+{% schema %}
+{
+  "name": "PassPort QR Widget",
+  "target": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "label_text",
+      "label": "Label text",
+      "default": "Digital Product Passport"
+    },
+    {
+      "type": "text",
+      "id": "sub_label",
+      "label": "Sub-label",
+      "default": "Scan to view sustainability data"
+    },
+    {
+      "type": "range",
+      "id": "qr_size",
+      "label": "QR code size (px)",
+      "min": 80,
+      "max": 200,
+      "step": 10,
+      "default": 120
+    },
+    {
+      "type": "color",
+      "id": "accent_color",
+      "label": "Accent color",
+      "default": "#16a34a"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Widget background",
+      "default": "#ffffff"
+    },
+    {
+      "type": "select",
+      "id": "alignment",
+      "label": "Alignment",
+      "options": [
+        { "value": "flex-start", "label": "Left" },
+        { "value": "center", "label": "Center" },
+        { "value": "flex-end", "label": "Right" }
+      ],
+      "default": "flex-start"
+    },
+    {
+      "type": "range",
+      "id": "padding",
+      "label": "Padding (px)",
+      "min": 8,
+      "max": 40,
+      "step": 4,
+      "default": 16
+    }
+  ]
+}
+{% endschema %}

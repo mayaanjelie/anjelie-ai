@@ -1,0 +1,38 @@
+# Shopify App configuration for PassPort
+# This file is used by Shopify CLI
+
+name = "PassPort — EU Digital Product Passports"
+handle = "passport-dpp"
+client_id = "{{ SHOPIFY_API_KEY }}"
+
+[access_scopes]
+scopes = "read_products,write_products,read_themes,write_themes"
+
+[auth]
+redirect_urls = [
+  "https://your-app.vercel.app/api/auth/callback",
+  "http://localhost:3000/api/auth/callback"
+]
+
+[webhooks]
+api_version = "2024-01"
+
+  [[webhooks.subscriptions]]
+  topics = ["app/uninstalled"]
+  uri = "/api/webhooks"
+
+  [[webhooks.subscriptions]]
+  topics = ["shop/update"]
+  uri = "/api/webhooks"
+
+[app_proxy]
+url = "https://your-app.vercel.app"
+subpath = "passport"
+prefix = "apps"
+
+[pos]
+embedded = false
+
+[build]
+automatically_update_urls_on_dev = true
+dev_store_url = "your-dev-store.myshopify.com"

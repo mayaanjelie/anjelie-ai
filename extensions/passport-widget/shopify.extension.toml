@@ -1,0 +1,12 @@
+# PassPort Theme App Extension
+# Adds QR code widget to Shopify product pages
+
+api_version = "2024-01"
+
+[[extensions]]
+type = "theme"
+name = "PassPort QR Widget"
+handle = "passport-qr-widget"
+
+  [extensions.development]
+    root_url = "http://localhost:3000"
